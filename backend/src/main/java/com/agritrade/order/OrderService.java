@@ -129,12 +129,10 @@ public class OrderService {
     @Transactional
     public void ship(Long orderId) {
         TradeOrder order = merchantOrder(orderId);
-        if (!"WAIT_SHIPMENT".equals(order.getOrderStatus())) {
+        LocalDateTime shipTime = LocalDateTime.now();
+        if (orderMapper.shipIfWaiting(orderId, order.getMerchantId(), shipTime) == 0) {
             throw new BizException("订单状态不可发货");
         }
-        order.setOrderStatus("SHIPPED");
-        order.setShipTime(LocalDateTime.now());
-        orderMapper.updateById(order);
         messageService.create(order.getUserId(), "订单已发货", "订单 " + order.getOrderNo() + " 已发货", "ORDER", order.getId(), "ORDER");
     }
 
@@ -144,12 +142,9 @@ public class OrderService {
         if (order == null || !order.getUserId().equals(StpUtil.getLoginIdAsLong())) {
             throw new BizException("订单不存在");
         }
-        if (!"SHIPPED".equals(order.getOrderStatus())) {
+        if (orderMapper.completeIfShipped(orderId, order.getUserId(), LocalDateTime.now()) == 0) {
             throw new BizException("订单状态不可收货");
         }
-        order.setOrderStatus("COMPLETED");
-        order.setCompleteTime(LocalDateTime.now());
-        orderMapper.updateById(order);
     }
 
     @Transactional
@@ -158,17 +153,15 @@ public class OrderService {
         if (order == null || !order.getUserId().equals(StpUtil.getLoginIdAsLong())) {
             throw new BizException("订单不存在");
         }
-        if (!"PENDING_PAYMENT".equals(order.getOrderStatus())) {
+        LocalDateTime payTime = LocalDateTime.now();
+        if (orderMapper.markPaidIfPending(orderId, order.getUserId(), payTime) == 0) {
             throw new BizException("订单状态不可支付");
         }
-        order.setOrderStatus("WAIT_SHIPMENT");
-        order.setPayTime(LocalDateTime.now());
-        orderMapper.updateById(order);
         PaymentRecord record = paymentRecordMapper.selectOne(Wrappers.<PaymentRecord>lambdaQuery().eq(PaymentRecord::getOrderId, orderId));
         record.setPayStatus("SUCCESS");
         record.setPayType("MOCK");
-        record.setPayTime(LocalDateTime.now());
-        record.setUpdateTime(LocalDateTime.now());
+        record.setPayTime(payTime);
+        record.setUpdateTime(payTime);
         paymentRecordMapper.updateById(record);
         messageService.create(order.getUserId(), "支付成功", "订单 " + order.getOrderNo() + " 支付成功", "PAYMENT", order.getId(), "ORDER");
     }
@@ -258,13 +251,9 @@ public class OrderService {
     }
 
     private void cancelPending(TradeOrder order, String reason) {
-        if (!"PENDING_PAYMENT".equals(order.getOrderStatus())) {
+        if (orderMapper.cancelIfPending(order.getId(), order.getUserId(), reason, LocalDateTime.now()) == 0) {
             throw new BizException("订单状态不可取消");
         }
-        order.setOrderStatus("CANCELLED");
-        order.setCancelReason(reason);
-        order.setCancelTime(LocalDateTime.now());
-        orderMapper.updateById(order);
         for (TradeOrderItem item : items(order.getId())) {
             Product product = productMapper.selectById(item.getProductId());
             if (product == null || productMapper.incrementStock(product.getId(), item.getQuantity()) == 0) {
