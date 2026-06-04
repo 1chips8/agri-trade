@@ -1,172 +1,179 @@
 # 农产品直销交易与订单履约系统
 
-基于前后端分离架构的农产品直销交易平台，覆盖商家入驻、商品发布审核、消费者浏览下单、模拟支付、订单履约、评价通知和后台统计的完整业务闭环。
+基于 Spring Boot 与 Vue 3 的前后端分离农产品交易平台。当前版本已实现用户认证、商家入驻审核、商品审核与上下架、购物车、模拟支付、订单履约、站内消息和统计看板。
+
+> 当前状态：可运行的课程/演示项目。评价、订单超时自动取消、RabbitMQ 异步通知和商品缓存等能力尚未实现，数据库与配置中仅保留了部分扩展基础。
+
+## 功能与实现状态
+
+| 模块 | 当前能力 | 状态 |
+|------|----------|------|
+| 用户认证 | 注册、登录、当前用户、退出登录 | 已实现 |
+| 商家入驻 | 用户申请、管理员审核、创建商家档案 | 已实现 |
+| 商品管理 | 商家发布/修改/上下架、管理员审核、公开查询 | 已实现 |
+| 购物车 | 添加、修改数量、选中、删除、清空 | 已实现 |
+| 订单履约 | 按商家拆单、扣减/返还库存、取消、发货、收货 | 已实现 |
+| 支付 | 模拟支付、支付记录查询 | 已实现 |
+| 消息通知 | 支付、审核、发货等事件同步写入站内消息 | 已实现 |
+| 数据统计 | 平台与商家概览、趋势和排行 | 已实现 |
+| Redis | 5 秒用户级下单防重复提交锁 | 已实现 |
+| RabbitMQ | 交换机、队列和绑定声明 | 已配置，业务未接入 |
+| 商品评价 | `product_review` 表结构 | 未实现 |
+| 超时取消 | 30 分钟未支付自动取消 | 未实现 |
 
 ## 技术栈
 
-| 层级 | 技术 | 版本 |
-|------|------|------|
-| 后端框架 | Spring Boot | 2.7.18 |
-| ORM | MyBatis-Plus | 3.5.5 |
-| 认证鉴权 | Sa-Token（RBAC 四角色模型） | 1.37.0 |
-| 数据库 | MySQL | 8.0 |
-| 缓存 | Redis | 7-alpine |
-| 消息队列 | RabbitMQ | 3.13-management |
-| API 文档 | Knife4j | 4.4.0 |
-| 前端框架 | Vue 3 + Vite | 3.5 / 6.0 |
-| UI 组件库 | Element Plus | 2.9 |
-| 状态管理 | Pinia | 2.3 |
-| 图表 | ECharts | 5.6 |
-| 反向代理 | Nginx | 1.27-alpine |
-| 容器化 | Docker Compose | — |
-
-## 系统架构
-
-```
-浏览器 :80 ──▶ Nginx ──┬── /api/** ──▶ Spring Boot :8080 ──┬── MySQL :3306
-                       │                                    ├── Redis :6379
-                       └── /* ──────▶ 前端 Nginx :80        └── RabbitMQ :5672
-                                         (Vue 3 SPA)
-```
-
-后端采用模块化单体架构，按业务领域拆分为 12 个模块（auth / user / merchant / category / product / cart / order / payment / inventory / message / review / statistics），每个模块遵循 `controller → service → mapper → entity` 分层。
-
-## 系统角色
-
-| 角色 | 权限范围 |
-|------|----------|
-| 游客（GUEST） | 注册、登录、浏览商品 |
-| 消费者（CONSUMER） | 购物车、下单、支付、收货、评价、消息、申请成为商家 |
-| 商家（MERCHANT） | 商品发布与上下架、订单发货、评价回复、经营统计 |
-| 管理员（ADMIN） | 商家审核、商品审核、分类管理、平台统计、违规处理 |
-
-## 功能模块
-
-| 模块 | 核心功能 |
-|------|----------|
-| 认证 | 注册、登录、Sa-Token 会话管理 |
-| 商家入驻 | 提交申请 → 管理员审核（通过/拒绝）→ 创建商家档案 → 消息通知 |
-| 商品管理 | 商家发布 → 管理员审核 → 上架/下架；前台按关键词搜索、按分类浏览 |
-| 购物车 | 加入购物车、数量修改、选中状态管理、按商家分组结算 |
-| 订单履约 | 购物车下单（Redis 防重 + 库存锁定）→ 按商家拆单 → 模拟支付 → 发货 → 确认收货 |
-| 超时取消 | 订单创建后 RabbitMQ 延迟 30 分钟，未支付自动取消并返还库存 |
-| 消息通知 | 支付/审核/发货/取消事件通过 RabbitMQ 异步写入，支持已读/删除管理 |
-| 数据统计 | 管理员看板（概览/趋势/热销/分类/商家排行）、商家看板（概览/趋势）、ECharts 图表 |
-
-## 数据库设计
-
-13 张核心表，关键设计要点：
-
-| 表 | 说明 | 亮点 |
-|----|------|------|
-| `sys_user` | 用户 | BCrypt 密码、CONSUMER/MERCHANT/ADMIN 三角色、逻辑删除 |
-| `merchant_apply` | 入驻申请 | 审核状态流转 PENDING→APPROVED/REJECTED |
-| `merchant` | 商家档案 | user_id 唯一约束、累计销售额/订单数 |
-| `product_category` | 商品分类 | 支持父子层级、ENABLED/DISABLED 状态 |
-| `product` | 商品 | 审核状态+销售状态双字段、价格/库存/销量/评分 |
-| `cart_item` | 购物车 | (user_id, product_id) 唯一约束、selected 选中标识 |
-| `trade_order` | 订单 | 按商家拆单、完整状态流转、收货地址快照 |
-| `trade_order_item` | 订单明细 | 商品名/价格/图片快照、防止商品变更影响历史订单 |
-| `payment_record` | 支付流水 | 独立流水号、PENDING/SUCCESS/CLOSED 三状态 |
-| `inventory_log` | 库存流水 | before/after 双向记录、ORDER/CANCEL 变更类型追踪 |
-| `message_notice` | 消息通知 | 已读/未读管理、关联业务 ID 溯源 |
-| `product_review` | 商品评价 | 评分+内容+商家回复 |
-| `daily_statistics` | 日统计 | 按日期汇总订单/销售额/用户/商品 |
+| 层级 | 技术 |
+|------|------|
+| 后端 | JDK 17、Spring Boot 2.7.18、MyBatis-Plus 3.5.5、Sa-Token 1.37.0 |
+| 数据与中间件 | MySQL 8.0、Redis 7、RabbitMQ 3.13 |
+| API 文档 | Knife4j 4.4.0 |
+| 前端 | Vue 3.5、Vite 6、Element Plus 2.9、Pinia 2.3、ECharts 5.6 |
+| 部署 | Docker Compose、Nginx |
 
 ## 项目结构
 
-```
-agri-trade
-├── backend/                          # Spring Boot 后端
+```text
+agri-trade/
+├── backend/                       # Spring Boot 后端
 │   ├── src/main/java/com/agritrade/
-│   │   ├── common/                   # 统一返回体、全局异常、实体基类
-│   │   ├── config/                   # Sa-Token、MyBatis-Plus、RabbitMQ、管理员初始化
-│   │   ├── auth/                     # 认证模块
-│   │   ├── user/                     # 用户实体与枚举
-│   │   ├── merchant/                 # 商家入驻与审核
-│   │   ├── category/                 # 商品分类
-│   │   ├── product/                  # 商品发布与审核
-│   │   ├── cart/                     # 购物车
-│   │   ├── order/                    # 订单与库存流水
-│   │   ├── payment/                  # 模拟支付
-│   │   ├── message/                  # 消息通知
-│   │   └── statistics/              # 数据统计
-│   ├── src/main/resources/
-│   │   ├── application.yml           # 主配置（环境变量驱动）
-│   │   ├── application-local-h2.yml  # 本地 H2 开发配置
-│   │   └── db/schema.sql             # 建表脚本 + 初始分类数据
-│   └── Dockerfile
-├── frontend/                         # Vue 3 前端
-│   ├── src/
-│   │   ├── views/                    # 7 个页面组件
-│   │   │   ├── Products.vue          # 商品列表与搜索
-│   │   │   ├── Login.vue             # 登录/注册
-│   │   │   ├── Cart.vue              # 购物车与下单
-│   │   │   ├── Orders.vue            # 订单管理
-│   │   │   ├── Merchant.vue          # 商家后台（申请/商品/发货）
-│   │   │   ├── Admin.vue             # 管理后台（审核/分类）
-│   │   │   └── Dashboard.vue         # 数据看板（ECharts）
-│   │   ├── stores/auth.js            # Pinia 登录态
-│   │   ├── api.js                    # Axios 封装
-│   │   ├── router.js                 # 路由配置
-│   │   └── App.vue                   # 导航栏 + 路由出口
-│   └── Dockerfile
-├── nginx/
-│   └── default.conf                  # Nginx 反向代理配置
-└── docker-compose.yml                # 6 服务编排
+│   │   ├── auth/                  # 注册、登录和会话
+│   │   ├── merchant/              # 商家入驻与审核
+│   │   ├── category/              # 商品分类
+│   │   ├── product/               # 商品发布、审核与查询
+│   │   ├── cart/                  # 购物车
+│   │   ├── order/                 # 订单与库存流水
+│   │   ├── payment/               # 模拟支付
+│   │   ├── message/               # 站内消息
+│   │   └── statistics/            # 数据统计
+│   └── src/main/resources/
+│       ├── application.yml
+│       ├── application-local-h2.yml
+│       └── db/schema.sql
+├── frontend/                      # Vue 3 前端
+├── nginx/default.conf             # 统一入口反向代理
+├── docker-compose.yml
+└── 农产品交易系统标准开发设计文档.md
 ```
 
 ## 快速开始
 
-### Docker Compose（推荐）
+### Docker Compose
+
+环境要求：JDK 17、Maven、Node.js/npm 和 Docker Compose。
+
+当前 Dockerfile 会复制本地已经生成的 `backend/target/*.jar` 与 `frontend/dist`，因此首次启动前需要先构建应用：
 
 ```bash
-# 构建后端 JAR
-cd backend && mvn -DskipTests package
+cd backend
+mvn clean package -DskipTests
 
-# 构建前端 dist
-cd ../frontend && npm install && npm run build
+cd ../frontend
+npm ci
+npm run build
 
-# 启动全部服务
-cd .. && docker compose up -d --build
+cd ..
+docker compose up -d --build
 ```
 
-### 启动后访问
+检查服务状态：
 
-| 服务 | 地址 | 说明 |
-|------|------|------|
-| 前端入口 | http://localhost | Vue SPA |
-| 后端 API | http://localhost:8080/api | REST 接口 |
-| API 文档 | http://localhost:8080/doc.html | Knife4j |
-| RabbitMQ 管理台 | http://localhost:15672 | 消息队列监控 |
+```bash
+docker compose ps
+docker compose logs -f backend
+```
 
 ### 本地开发
 
-**后端**（JDK 17 + Maven）：
+1. 启动依赖服务：
+
+```bash
+docker compose up -d mysql redis rabbitmq
+```
+
+2. 启动后端：
 
 ```bash
 cd backend
 mvn spring-boot:run
-# 或使用 H2 内存数据库（无需 MySQL/Redis/RabbitMQ）：
-mvn spring-boot:run -Dspring-boot.run.profiles=local-h2
 ```
 
-**前端**：
+3. 新终端启动前端：
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
-### 默认管理员
+前端开发服务器运行在 `http://localhost:5173`，并将 `/api` 代理到 `http://localhost:8080`。
+
+### H2 开发模式
+
+`local-h2` profile 只把 MySQL 替换为 H2 内存数据库；下单防重仍依赖 Redis。RabbitMQ 当前尚未接入业务流程，但配置仍会被加载。
+
+```bash
+docker compose up -d redis rabbitmq
+cd backend
+mvn spring-boot:run -Dspring-boot.run.profiles=local-h2
+```
+
+## 服务地址
+
+| 服务 | 地址 | 说明 |
+|------|------|------|
+| Docker 统一入口 | http://localhost | Vue SPA，经 Nginx 访问 |
+| 前端开发服务器 | http://localhost:5173 | 本地开发模式 |
+| 后端 API | http://localhost:8080/api | REST 接口 |
+| Knife4j | http://localhost:8080/doc.html | API 调试文档 |
+| OpenAPI JSON | http://localhost:8080/v3/api-docs | 接口定义 |
+| RabbitMQ 管理台 | http://localhost:15672 | 用户名/密码：`agri` / `agri123456` |
+
+## 默认账号
+
+首次启动后端时，`AdminInitializer` 会创建管理员：
 
 | 用户名 | 密码 |
 |--------|------|
 | `admin` | `admin123` |
 
-管理员由 `AdminInitializer` 在首次启动时自动创建，密码使用 BCrypt 加密存储。
+该账号仅适合本地演示，部署到共享或公网环境前应修改初始化逻辑和所有默认密码。
 
-## 详细设计文档
+## 配置
 
-参见 [农产品交易系统标准开发设计文档](农产品交易系统标准开发设计文档.md)，包含完整的数据库字段定义、API 路径、状态设计、Redis/RabbitMQ 拓扑和事务设计。
+后端配置支持以下环境变量：
+
+| 环境变量 | 默认值 |
+|----------|--------|
+| `MYSQL_HOST` / `MYSQL_PORT` / `MYSQL_DATABASE` | `localhost` / `3306` / `agri_trade` |
+| `MYSQL_USER` / `MYSQL_PASSWORD` | `agri` / `agri123456` |
+| `REDIS_HOST` / `REDIS_PORT` | `localhost` / `6379` |
+| `RABBITMQ_HOST` / `RABBITMQ_PORT` | `localhost` / `5672` |
+| `RABBITMQ_USER` / `RABBITMQ_PASSWORD` | `agri` / `agri123456` |
+
+前端开发代理可通过 `VITE_API_PROXY_TARGET` 修改，默认值为 `http://localhost:8080`。
+
+## 验证与测试
+
+```bash
+cd backend
+mvn test
+
+cd ../frontend
+npm run build
+```
+
+仓库当前没有后端自动化测试类，也没有前端测试脚本；上述命令主要用于验证后端编译和前端生产构建。
+
+## 已知限制
+
+- 角色权限主要在 Service 层校验，Sa-Token 拦截器只统一检查登录状态。
+- Sa-Token 登录会话当前未配置 Redis DAO，不能按“Redis 持久化会话”理解。
+- 库存扣减是数据库读后更新，尚未实现 Redis 商品级库存锁或数据库条件更新。
+- RabbitMQ 尚未用于延迟取消或异步通知；站内通知目前同步写库。
+- `product_review`、`daily_statistics` 表已建，但评价模块与日统计任务尚未实现。
+- Docker Compose 中包含演示用明文密码，不适合直接用于生产环境。
+
+## 详细设计
+
+参见 [农产品交易系统标准开发设计文档](农产品交易系统标准开发设计文档.md)。其中包含数据库字段、API、状态和目标架构；阅读时请以文档开头的实现状态说明为准。
