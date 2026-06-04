@@ -66,12 +66,11 @@ public class OrderService {
                     if (product == null || !"ON_SALE".equals(product.getSaleStatus())) {
                         throw new BizException("商品不可购买");
                     }
-                    if (product.getStock() < cartItem.getQuantity()) {
+                    if (productMapper.decrementStockIfAvailable(product.getId(), cartItem.getQuantity()) == 0) {
                         throw new BizException(product.getProductName() + "库存不足");
                     }
-                    int before = product.getStock();
-                    product.setStock(before - cartItem.getQuantity());
-                    productMapper.updateById(product);
+                    product = productMapper.selectById(product.getId());
+                    int before = product.getStock() + cartItem.getQuantity();
                     total = total.add(product.getPrice().multiply(BigDecimal.valueOf(cartItem.getQuantity())));
                     createOrderItem(order, product, cartItem.getQuantity());
                     createInventoryLog(order, product, cartItem.getQuantity(), before, product.getStock(), "SALE_LOCK");
@@ -268,9 +267,11 @@ public class OrderService {
         orderMapper.updateById(order);
         for (TradeOrderItem item : items(order.getId())) {
             Product product = productMapper.selectById(item.getProductId());
-            int before = product.getStock();
-            product.setStock(before + item.getQuantity());
-            productMapper.updateById(product);
+            if (product == null || productMapper.incrementStock(product.getId(), item.getQuantity()) == 0) {
+                throw new BizException("商品不存在，无法返还库存");
+            }
+            product = productMapper.selectById(product.getId());
+            int before = product.getStock() - item.getQuantity();
             createInventoryLog(order, product, item.getQuantity(), before, product.getStock(), "RETURN");
         }
         PaymentRecord record = paymentByOrder(order.getId());
