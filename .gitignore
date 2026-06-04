@@ -5,3 +5,7 @@ backend/target/
 .idea/
 .vscode/
 *.log
+reports/
+.agents/
+.codex/
+*.docx
