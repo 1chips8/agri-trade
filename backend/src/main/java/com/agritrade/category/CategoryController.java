@@ -33,6 +33,7 @@ public class CategoryController {
 
     @PutMapping("/api/admin/product-categories/{categoryId}")
     public Result<Void> update(@PathVariable Long categoryId, @Valid @RequestBody ProductCategory category) {
+        validateCategoryId(categoryId);
         authService.requireRole("ADMIN");
         category.setId(categoryId);
         categoryMapper.updateById(category);
@@ -41,6 +42,7 @@ public class CategoryController {
 
     @PostMapping("/api/admin/product-categories/{categoryId}/status")
     public Result<Void> status(@PathVariable Long categoryId, @RequestParam String status) {
+        validateCategoryId(categoryId);
         validateStatus(status);
         authService.requireRole("ADMIN");
         ProductCategory category = new ProductCategory();
@@ -48,6 +50,12 @@ public class CategoryController {
         category.setStatus(status);
         categoryMapper.updateById(category);
         return Result.ok();
+    }
+
+    private void validateCategoryId(Long categoryId) {
+        if (categoryId == null || categoryId <= 0) {
+            throw new BizException("类目ID必须为正数");
+        }
     }
 
     private void validateStatus(String status) {

@@ -1,5 +1,23 @@
 # 项目进度
 
+## 2026-06-05：类目 ID 参数校验
+
+### 已完成
+
+- 后台类目修改和状态切换接口新增类目 ID guard。
+- `categoryId` 为空或非正数时在 Controller 入口拒绝。
+- 无效类目 ID 不再继续进入管理员权限校验或数据库更新逻辑。
+- 扩展类目请求校验单元测试，覆盖后台类目操作入口的无效 ID 拒绝路径。
+
+### 验证
+
+- `mvn -Dtest=CategoryRequestValidationTest test`：3 个测试通过。
+- `mvn clean test`：重新编译 53 个生产源码，31 个测试通过。
+
+### 遗留问题
+
+- 可再做一次 Controller 参数入口清扫，确认是否还有未覆盖的 PathVariable 或 Query 参数防护。
+
 ## 2026-06-05：商家申请 ID 参数校验
 
 ### 已完成

@@ -43,4 +43,19 @@ class CategoryRequestValidationTest {
                 .isInstanceOf(BizException.class)
                 .hasMessage("类目状态无效");
     }
+
+    @Test
+    void categoryOperationsRejectNonPositiveCategoryId() {
+        CategoryController controller = new CategoryController(null, null);
+
+        assertThatThrownBy(() -> controller.update(0L, new ProductCategory()))
+                .isInstanceOf(BizException.class)
+                .hasMessage("类目ID必须为正数");
+        assertThatThrownBy(() -> controller.status(-1L, "ENABLED"))
+                .isInstanceOf(BizException.class)
+                .hasMessage("类目ID必须为正数");
+        assertThatThrownBy(() -> controller.status(null, "DISABLED"))
+                .isInstanceOf(BizException.class)
+                .hasMessage("类目ID必须为正数");
+    }
 }
