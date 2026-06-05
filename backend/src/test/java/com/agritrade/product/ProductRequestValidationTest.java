@@ -1,5 +1,6 @@
 package com.agritrade.product;
 
+import com.agritrade.common.BizException;
 import org.junit.jupiter.api.Test;
 
 import javax.validation.Valid;
@@ -12,6 +13,7 @@ import javax.validation.constraints.NotNull;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ProductRequestValidationTest {
@@ -37,5 +39,29 @@ class ProductRequestValidationTest {
         Method update = ProductController.class.getDeclaredMethod("update", Long.class, Product.class);
         assertThat(create.getParameters()[0].isAnnotationPresent(Valid.class)).isTrue();
         assertThat(update.getParameters()[1].isAnnotationPresent(Valid.class)).isTrue();
+    }
+
+    @Test
+    void productOperationsRejectNonPositiveProductId() {
+        ProductController controller = new ProductController(null);
+
+        assertThatThrownBy(() -> controller.update(0L, new Product()))
+                .isInstanceOf(BizException.class)
+                .hasMessage("商品ID必须为正数");
+        assertThatThrownBy(() -> controller.onSale(-1L))
+                .isInstanceOf(BizException.class)
+                .hasMessage("商品ID必须为正数");
+        assertThatThrownBy(() -> controller.offSale(0L))
+                .isInstanceOf(BizException.class)
+                .hasMessage("商品ID必须为正数");
+        assertThatThrownBy(() -> controller.approve(null))
+                .isInstanceOf(BizException.class)
+                .hasMessage("商品ID必须为正数");
+        assertThatThrownBy(() -> controller.reject(0L))
+                .isInstanceOf(BizException.class)
+                .hasMessage("商品ID必须为正数");
+        assertThatThrownBy(() -> controller.detail(-1L))
+                .isInstanceOf(BizException.class)
+                .hasMessage("商品ID必须为正数");
     }
 }
