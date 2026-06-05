@@ -313,3 +313,24 @@
 
 - 当前构建仍有 Rollup 注释移除警告和入口 JS chunk 超过 500 kB 的体积警告；不影响本次构建通过，可后续通过路由懒加载或 `manualChunks` 优化。
 - 本机没有可用 `npm`/`corepack`，后续若重装依赖，建议在 Windows 环境执行 `npm ci` 或补齐包管理器，避免再次混入 Linux 平台 `node_modules`。
+
+## 2026-06-05：前端构建体积优化
+
+### 已完成
+
+- 前端路由视图改为懒加载，避免所有页面和看板依赖进入首屏入口包。
+- 看板页 ECharts 改为按需注册柱状图、网格组件和 Canvas 渲染器，避免全量引入 ECharts。
+- Element Plus 从全量插件注册改为只注册当前模板实际使用的组件。
+- `ElMessage` 改为组件级入口导入，避免从 Element Plus 根入口拉入整库。
+- Vite 构建配置新增 `manualChunks`，将 Vue/Pinia、Element Plus、ECharts 和其他第三方依赖分离成稳定 vendor chunk。
+
+### 验证
+
+- `node .\node_modules\vite\bin\vite.js build`：生产构建通过，1573 个模块完成转换，已消除单个 JS chunk 超过 500 kB 的警告。
+- 优化后主要 JS chunk：入口约 6.30 kB，Vue vendor 约 114.10 kB，Element Plus 约 222.82 kB，ECharts 约 261.51 kB，通用 vendor 约 293.77 kB。
+- Vite preview 基础验收：`/`、`/products`、`/login`、`/dashboard` 均返回 200，首页引用的主要 JS/CSS 资产均返回 200。
+
+### 遗留问题
+
+- Element Plus CSS 仍使用全量样式，压缩后约 357.33 kB、gzip 后约 47.79 kB；当前不触发 Vite 大 chunk 警告，后续若追求更小首屏 CSS，可切换为组件级样式导入。
+- 由于本机没有 Playwright/Puppeteer 依赖，本次只做了生产构建和 HTTP 级预览验收，未做浏览器截图级交互验收。

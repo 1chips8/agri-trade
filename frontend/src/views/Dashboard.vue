@@ -13,18 +13,24 @@
 </template>
 
 <script setup>
-import { nextTick, onMounted, ref } from 'vue'
-import * as echarts from 'echarts'
+import { nextTick, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
+import { BarChart } from 'echarts/charts'
+import { GridComponent } from 'echarts/components'
+import { init, use } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
 import api from '../api'
+
+use([BarChart, GridComponent, CanvasRenderer])
 
 const overview = ref({})
 const chartRef = ref(null)
+const chart = shallowRef(null)
 
 async function load() {
   overview.value = await api.get('/admin/statistics/overview').catch(() => ({}))
   await nextTick()
-  const chart = echarts.init(chartRef.value)
-  chart.setOption({
+  if (!chart.value) chart.value = init(chartRef.value)
+  chart.value.setOption({
     xAxis: { type: 'category', data: ['订单', '商品'] },
     yAxis: { type: 'value' },
     series: [{ type: 'bar', data: [overview.value.orderCount || 0, overview.value.productCount || 0] }]
@@ -32,4 +38,5 @@ async function load() {
 }
 
 onMounted(load)
+onBeforeUnmount(() => chart.value?.dispose())
 </script>
