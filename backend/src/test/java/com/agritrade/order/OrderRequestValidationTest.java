@@ -1,5 +1,6 @@
 package com.agritrade.order;
 
+import com.agritrade.common.BizException;
 import org.junit.jupiter.api.Test;
 
 import javax.validation.Valid;
@@ -9,6 +10,7 @@ import javax.validation.constraints.NotBlank;
 import java.lang.reflect.Method;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class OrderRequestValidationTest {
     private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
@@ -27,5 +29,23 @@ class OrderRequestValidationTest {
 
         Method method = OrderController.class.getDeclaredMethod("create", CreateOrderRequest.class);
         assertThat(method.getParameters()[0].isAnnotationPresent(Valid.class)).isTrue();
+    }
+
+    @Test
+    void orderOperationsRejectNonPositiveOrderId() {
+        OrderController controller = new OrderController(null);
+
+        assertThatThrownBy(() -> controller.detail(0L))
+                .isInstanceOf(BizException.class)
+                .hasMessage("订单ID必须为正数");
+        assertThatThrownBy(() -> controller.cancel(-1L, null))
+                .isInstanceOf(BizException.class)
+                .hasMessage("订单ID必须为正数");
+        assertThatThrownBy(() -> controller.ship(null))
+                .isInstanceOf(BizException.class)
+                .hasMessage("订单ID必须为正数");
+        assertThatThrownBy(() -> controller.receive(0L))
+                .isInstanceOf(BizException.class)
+                .hasMessage("订单ID必须为正数");
     }
 }

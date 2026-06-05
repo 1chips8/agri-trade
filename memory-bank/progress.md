@@ -1,5 +1,24 @@
 # 项目进度
 
+## 2026-06-05：订单与消息单条 ID 参数校验
+
+### 已完成
+
+- 订单详情、取消、商家发货和用户收货接口新增订单 ID guard。
+- 消息单条已读和删除接口新增消息 ID guard。
+- `orderId`、`messageId` 为空或非正数时在 Controller 入口拒绝。
+- 无效 ID 不再继续进入订单履约、消息查询或删除逻辑。
+- 扩展订单与消息请求校验单元测试，覆盖单条操作入口的无效 ID 拒绝路径。
+
+### 验证
+
+- `mvn -Dtest=OrderRequestValidationTest,MessageRequestValidationTest test`：5 个测试通过。
+- `mvn clean test`：重新编译 53 个生产源码，28 个测试通过。
+
+### 遗留问题
+
+- 若继续补 PathVariable 防护，可检查购物车删除、商家申请审核、类目更新等其他单 ID 入口。
+
 ## 2026-06-05：商品操作 ID 参数校验
 
 ### 已完成

@@ -28,4 +28,17 @@ class MessageRequestValidationTest {
                 .isInstanceOf(BizException.class)
                 .hasMessage("消息ID必须为正数");
     }
+
+    @Test
+    void singleMessageOperationsRejectNonPositiveMessageId() {
+        assertThatThrownBy(() -> controller.read(0L))
+                .isInstanceOf(BizException.class)
+                .hasMessage("消息ID必须为正数");
+        assertThatThrownBy(() -> controller.delete(-1L))
+                .isInstanceOf(BizException.class)
+                .hasMessage("消息ID必须为正数");
+        assertThatThrownBy(() -> controller.read(null))
+                .isInstanceOf(BizException.class)
+                .hasMessage("消息ID必须为正数");
+    }
 }

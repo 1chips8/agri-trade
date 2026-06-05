@@ -32,6 +32,7 @@ public class MessageController {
 
     @PostMapping("/{messageId}/read")
     public Result<Void> read(@PathVariable Long messageId) {
+        validateMessageId(messageId);
         MessageNotice message = messageMapper.selectById(messageId);
         if (message != null && message.getUserId().equals(StpUtil.getLoginIdAsLong())) {
             message.setReadStatus("READ");
@@ -69,10 +70,17 @@ public class MessageController {
 
     @DeleteMapping("/{messageId}")
     public Result<Void> delete(@PathVariable Long messageId) {
+        validateMessageId(messageId);
         MessageNotice message = messageMapper.selectById(messageId);
         if (message != null && message.getUserId().equals(StpUtil.getLoginIdAsLong())) {
             messageMapper.deleteById(messageId);
         }
         return Result.ok();
+    }
+
+    private void validateMessageId(Long messageId) {
+        if (messageId == null || messageId <= 0) {
+            throw new BizException("消息ID必须为正数");
+        }
     }
 }
