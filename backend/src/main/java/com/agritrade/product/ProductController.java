@@ -4,6 +4,7 @@ import com.agritrade.common.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -12,12 +13,12 @@ public class ProductController {
     private final ProductService productService;
 
     @PostMapping("/api/merchant/products")
-    public Result<Product> create(@RequestBody Product product) {
+    public Result<Product> create(@Valid @RequestBody Product product) {
         return Result.ok(productService.create(product));
     }
 
     @PutMapping("/api/merchant/products/{productId}")
-    public Result<Void> update(@PathVariable Long productId, @RequestBody Product product) {
+    public Result<Void> update(@PathVariable Long productId, @Valid @RequestBody Product product) {
         productService.update(productId, product);
         return Result.ok();
     }

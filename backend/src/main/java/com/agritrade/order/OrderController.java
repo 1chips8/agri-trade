@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -13,7 +14,7 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping("/api/orders")
-    public Result<List<TradeOrder>> create(@RequestBody CreateOrderRequest request) {
+    public Result<List<TradeOrder>> create(@Valid @RequestBody CreateOrderRequest request) {
         return Result.ok(orderService.create(request));
     }
 

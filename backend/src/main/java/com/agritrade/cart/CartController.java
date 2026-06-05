@@ -10,6 +10,10 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
 @RestController
@@ -20,7 +24,7 @@ public class CartController {
     private final ProductMapper productMapper;
 
     @PostMapping
-    public Result<CartItem> add(@RequestBody AddCartRequest request) {
+    public Result<CartItem> add(@Valid @RequestBody AddCartRequest request) {
         Long userId = StpUtil.getLoginIdAsLong();
         Product product = productMapper.selectById(request.getProductId());
         if (product == null || !"ON_SALE".equals(product.getSaleStatus())) {
@@ -52,7 +56,7 @@ public class CartController {
     }
 
     @PutMapping("/{cartItemId}")
-    public Result<Void> updateQuantity(@PathVariable Long cartItemId, @RequestBody QuantityRequest request) {
+    public Result<Void> updateQuantity(@PathVariable Long cartItemId, @Valid @RequestBody QuantityRequest request) {
         CartItem item = owned(cartItemId);
         item.setQuantity(request.getQuantity());
         cartItemMapper.updateById(item);
@@ -73,7 +77,7 @@ public class CartController {
     }
 
     @PutMapping("/{cartItemId}/selected")
-    public Result<Void> selected(@PathVariable Long cartItemId, @RequestBody SelectedRequest request) {
+    public Result<Void> selected(@PathVariable Long cartItemId, @Valid @RequestBody SelectedRequest request) {
         CartItem item = owned(cartItemId);
         item.setSelected(request.getSelected());
         cartItemMapper.updateById(item);
@@ -81,7 +85,7 @@ public class CartController {
     }
 
     @PutMapping("/selected")
-    public Result<Void> selectAll(@RequestBody SelectedRequest request) {
+    public Result<Void> selectAll(@Valid @RequestBody SelectedRequest request) {
         List<CartItem> items = cartItemMapper.selectList(Wrappers.<CartItem>lambdaQuery().eq(CartItem::getUserId, StpUtil.getLoginIdAsLong()));
         for (CartItem item : items) {
             item.setSelected(request.getSelected());
@@ -100,17 +104,25 @@ public class CartController {
 
     @Data
     static class AddCartRequest {
+        @NotNull
         private Long productId;
+        @NotNull
+        @Min(1)
         private Integer quantity = 1;
     }
 
     @Data
     static class QuantityRequest {
+        @NotNull
+        @Min(1)
         private Integer quantity;
     }
 
     @Data
     static class SelectedRequest {
+        @NotNull
+        @Min(0)
+        @Max(1)
         private Integer selected;
     }
 }
