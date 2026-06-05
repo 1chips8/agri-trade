@@ -1,5 +1,6 @@
 package com.agritrade.merchant;
 
+import com.agritrade.common.BizException;
 import org.junit.jupiter.api.Test;
 
 import javax.validation.Valid;
@@ -9,6 +10,7 @@ import javax.validation.constraints.NotBlank;
 import java.lang.reflect.Method;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class MerchantRequestValidationTest {
     private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
@@ -41,5 +43,20 @@ class MerchantRequestValidationTest {
 
         Method method = MerchantController.class.getDeclaredMethod("reject", Long.class, MerchantController.RejectRequest.class);
         assertThat(method.getParameters()[1].isAnnotationPresent(Valid.class)).isTrue();
+    }
+
+    @Test
+    void merchantApplicationOperationsRejectNonPositiveApplyId() {
+        MerchantController controller = new MerchantController(null);
+
+        assertThatThrownBy(() -> controller.detail(0L))
+                .isInstanceOf(BizException.class)
+                .hasMessage("商家申请ID必须为正数");
+        assertThatThrownBy(() -> controller.approve(-1L))
+                .isInstanceOf(BizException.class)
+                .hasMessage("商家申请ID必须为正数");
+        assertThatThrownBy(() -> controller.reject(null, new MerchantController.RejectRequest()))
+                .isInstanceOf(BizException.class)
+                .hasMessage("商家申请ID必须为正数");
     }
 }

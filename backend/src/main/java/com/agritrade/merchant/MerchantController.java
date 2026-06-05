@@ -1,5 +1,6 @@
 package com.agritrade.merchant;
 
+import com.agritrade.common.BizException;
 import com.agritrade.common.Result;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class MerchantController {
 
     @GetMapping("/api/admin/merchant-applications/{applyId}")
     public Result<MerchantApply> detail(@PathVariable Long applyId) {
+        validateApplyId(applyId);
         return Result.ok(merchantService.listApplications().stream()
                 .filter(item -> item.getId().equals(applyId))
                 .findFirst()
@@ -39,14 +41,22 @@ public class MerchantController {
 
     @PostMapping("/api/admin/merchant-applications/{applyId}/approve")
     public Result<Void> approve(@PathVariable Long applyId) {
+        validateApplyId(applyId);
         merchantService.approve(applyId);
         return Result.ok();
     }
 
     @PostMapping("/api/admin/merchant-applications/{applyId}/reject")
     public Result<Void> reject(@PathVariable Long applyId, @Valid @RequestBody RejectRequest request) {
+        validateApplyId(applyId);
         merchantService.reject(applyId, request.getRejectReason());
         return Result.ok();
+    }
+
+    private void validateApplyId(Long applyId) {
+        if (applyId == null || applyId <= 0) {
+            throw new BizException("商家申请ID必须为正数");
+        }
     }
 
     @Data
