@@ -118,6 +118,12 @@ cd backend
 mvn spring-boot:run -Dspring-boot.run.profiles=local-h2
 ```
 
+如需直接演示有数据的页面，可额外打开演示数据开关：
+
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=local-h2 -Dspring-boot.run.arguments=--agri.demo-data.enabled=true
+```
+
 ## 服务地址
 
 | 服务 | 地址 | 说明 |
@@ -138,6 +144,15 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local-h2
 | `admin` | `admin123` |
 
 该账号仅适合本地演示，部署到共享或公网环境前应修改初始化逻辑和所有默认密码。
+
+如果以 `agri.demo-data.enabled=true` 启动 `local-h2`，还会创建以下演示账号和数据：
+
+| 用户名 | 密码 | 用途 |
+|--------|------|------|
+| `buyer` | `buyer123` | 普通买家，可浏览商品、加入购物车、下单和支付 |
+| `merchant` | `merchant123` | 已认证商家，可查看商家订单和发货 |
+
+演示数据包含 `绿野鲜农演示店` 和 3 个已审核上架商品：有机番茄、赣南脐橙、东北五常大米。
 
 ## 演示流程
 
@@ -177,6 +192,8 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local-h2
 前端开发代理可通过 `VITE_API_PROXY_TARGET` 修改，默认值为 `http://localhost:8080`。
 
 订单超时取消可通过 `agri.order.timeout.enabled`、`agri.order.timeout.minutes` 和 `agri.order.timeout.scan-delay-ms` 调整，默认启用、30 分钟超时、60 秒扫描一次。
+
+H2 演示数据可通过 `agri.demo-data.enabled=true` 开启，仅在 `local-h2` profile 下生效。
 
 ## 验证与测试
 
