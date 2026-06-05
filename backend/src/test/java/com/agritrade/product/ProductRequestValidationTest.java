@@ -64,4 +64,16 @@ class ProductRequestValidationTest {
                 .isInstanceOf(BizException.class)
                 .hasMessage("商品ID必须为正数");
     }
+
+    @Test
+    void publicListRejectsNonPositiveCategoryId() {
+        ProductController controller = new ProductController(null);
+
+        assertThatThrownBy(() -> controller.products(0L, null))
+                .isInstanceOf(BizException.class)
+                .hasMessage("类目ID必须为正数");
+        assertThatThrownBy(() -> controller.products(-1L, "苹果"))
+                .isInstanceOf(BizException.class)
+                .hasMessage("类目ID必须为正数");
+    }
 }

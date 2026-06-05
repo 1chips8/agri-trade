@@ -1,5 +1,24 @@
 # 项目进度
 
+## 2026-06-05：商品列表类目查询参数校验
+
+### 已完成
+
+- 商品公开列表接口新增可选 `categoryId` 查询参数 guard。
+- `categoryId` 不传时仍表示不按类目过滤。
+- `categoryId` 传入非正数时在 Controller 入口拒绝。
+- 无效类目 ID 不再继续进入商品公开列表查询逻辑。
+- 扩展商品请求校验单元测试，覆盖公开列表查询参数的无效 ID 拒绝路径。
+
+### 验证
+
+- `mvn -Dtest=ProductRequestValidationTest test`：3 个测试通过。
+- `mvn clean test`：重新编译 53 个生产源码，34 个测试通过。
+
+### 遗留问题
+
+- 本轮 Controller 参数入口清扫已覆盖主要 PathVariable 与已知可选 ID 查询参数；后续可转向前端构建验证或新功能开发。
+
 ## 2026-06-05：支付订单 ID 参数校验
 
 ### 已完成

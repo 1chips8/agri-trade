@@ -66,6 +66,7 @@ public class ProductController {
     @GetMapping("/api/products")
     public Result<List<Product>> products(@RequestParam(required = false) Long categoryId,
                                           @RequestParam(required = false) String keyword) {
+        validateCategoryIdIfPresent(categoryId);
         return Result.ok(productService.publicList(categoryId, keyword));
     }
 
@@ -78,6 +79,12 @@ public class ProductController {
     private void validateProductId(Long productId) {
         if (productId == null || productId <= 0) {
             throw new BizException("商品ID必须为正数");
+        }
+    }
+
+    private void validateCategoryIdIfPresent(Long categoryId) {
+        if (categoryId != null && categoryId <= 0) {
+            throw new BizException("类目ID必须为正数");
         }
     }
 }
