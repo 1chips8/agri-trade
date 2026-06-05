@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import javax.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
 
 @Data
@@ -12,9 +13,13 @@ import java.time.LocalDateTime;
 @TableName("merchant_apply")
 public class MerchantApply extends BaseEntity {
     private Long userId;
+    @NotBlank
     private String merchantName;
+    @NotBlank
     private String contactName;
+    @NotBlank
     private String contactPhone;
+    @NotBlank
     private String originAddress;
     private String description;
     private String licenseImage;

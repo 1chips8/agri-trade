@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
 import java.util.List;
 
 @RestController
@@ -13,7 +15,7 @@ public class MerchantController {
     private final MerchantService merchantService;
 
     @PostMapping("/api/merchant/apply")
-    public Result<MerchantApply> apply(@RequestBody MerchantApply request) {
+    public Result<MerchantApply> apply(@Valid @RequestBody MerchantApply request) {
         return Result.ok(merchantService.apply(request));
     }
 
@@ -42,13 +44,14 @@ public class MerchantController {
     }
 
     @PostMapping("/api/admin/merchant-applications/{applyId}/reject")
-    public Result<Void> reject(@PathVariable Long applyId, @RequestBody RejectRequest request) {
+    public Result<Void> reject(@PathVariable Long applyId, @Valid @RequestBody RejectRequest request) {
         merchantService.reject(applyId, request.getRejectReason());
         return Result.ok();
     }
 
     @Data
     static class RejectRequest {
+        @NotBlank
         private String rejectReason;
     }
 }

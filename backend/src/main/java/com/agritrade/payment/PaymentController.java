@@ -6,6 +6,9 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+
 @RestController
 @RequestMapping("/api/payments")
 @RequiredArgsConstructor
@@ -13,7 +16,7 @@ public class PaymentController {
     private final OrderService orderService;
 
     @PostMapping("/mock-pay")
-    public Result<Void> mockPay(@RequestBody MockPayRequest request) {
+    public Result<Void> mockPay(@Valid @RequestBody MockPayRequest request) {
         orderService.markPaid(request.getOrderId());
         return Result.ok();
     }
@@ -25,6 +28,7 @@ public class PaymentController {
 
     @Data
     static class MockPayRequest {
+        @NotNull
         private Long orderId;
     }
 }
