@@ -334,3 +334,24 @@
 
 - Element Plus CSS 仍使用全量样式，压缩后约 357.33 kB、gzip 后约 47.79 kB；当前不触发 Vite 大 chunk 警告，后续若追求更小首屏 CSS，可切换为组件级样式导入。
 - 由于本机没有 Playwright/Puppeteer 依赖，本次只做了生产构建和 HTTP 级预览验收，未做浏览器截图级交互验收。
+
+## 2026-06-05：订单超时自动取消最小版
+
+### 已完成
+
+- `TradeOrderMapper` 新增按创建时间查询过期待支付订单的方法。
+- `OrderService` 新增可测试的 `cancelExpiredPendingOrders(now, timeout)`，复用原有取消逻辑完成状态原子更新、库存返还、库存流水记录和支付记录关闭。
+- 新增 `OrderTimeoutScheduler`，默认每 60 秒扫描并取消超过 30 分钟未支付订单。
+- 主应用启用 Spring Scheduling；`local-h2` 测试配置关闭自动调度，避免测试中后台线程干扰。
+- README 同步更新超时取消实现状态、配置项和验证说明。
+
+### 验证
+
+- `mvn -Dtest=OrderTimeoutCancellationTest test`：2 个测试通过，覆盖过期待支付订单自动取消、库存返还、支付记录关闭，以及未过期/已支付订单不受影响。
+- `mvn clean test`：重新编译 54 个生产源码，36 个测试通过。
+- `node .\node_modules\vite\bin\vite.js build`：前端生产构建通过，1573 个模块完成转换，未出现大 chunk 警告。
+
+### 遗留问题
+
+- 超时取消当前使用 Spring 定时扫描实现，未接入 RabbitMQ 延迟队列；对演示交付足够，后续若要高并发生产化可改为消息延迟或分片扫描。
+- 每轮最多处理 100 个过期待支付订单；如演示数据量增大，可将批大小做成配置项。

@@ -111,7 +111,22 @@ public class OrderService {
         if (order == null || !order.getUserId().equals(StpUtil.getLoginIdAsLong())) {
             throw new BizException("订单不存在");
         }
-        cancelPending(order, reason == null ? "用户取消" : reason);
+        if (!cancelPending(order, reason == null ? "用户取消" : reason, LocalDateTime.now())) {
+            throw new BizException("订单状态不可取消");
+        }
+    }
+
+    @Transactional
+    public int cancelExpiredPendingOrders(LocalDateTime now, Duration timeout) {
+        LocalDateTime cutoff = now.minus(timeout);
+        List<TradeOrder> expiredOrders = orderMapper.selectExpiredPendingOrders(cutoff, 100);
+        int cancelled = 0;
+        for (TradeOrder order : expiredOrders) {
+            if (cancelPending(order, "支付超时自动取消", now)) {
+                cancelled++;
+            }
+        }
+        return cancelled;
     }
 
     public List<TradeOrder> merchantOrders() {
@@ -250,9 +265,9 @@ public class OrderService {
         }
     }
 
-    private void cancelPending(TradeOrder order, String reason) {
-        if (orderMapper.cancelIfPending(order.getId(), order.getUserId(), reason, LocalDateTime.now()) == 0) {
-            throw new BizException("订单状态不可取消");
+    private boolean cancelPending(TradeOrder order, String reason, LocalDateTime cancelTime) {
+        if (orderMapper.cancelIfPending(order.getId(), order.getUserId(), reason, cancelTime) == 0) {
+            return false;
         }
         for (TradeOrderItem item : items(order.getId())) {
             Product product = productMapper.selectById(item.getProductId());
@@ -266,8 +281,9 @@ public class OrderService {
         PaymentRecord record = paymentByOrder(order.getId());
         if (record != null) {
             record.setPayStatus("CLOSED");
-            record.setUpdateTime(LocalDateTime.now());
+            record.setUpdateTime(cancelTime);
             paymentRecordMapper.updateById(record);
         }
+        return true;
     }
 }

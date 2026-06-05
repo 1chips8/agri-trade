@@ -43,3 +43,10 @@ springdoc:
 logging:
   level:
     com.agritrade: debug
+
+agri:
+  order:
+    timeout:
+      enabled: true
+      minutes: 30
+      scan-delay-ms: 60000
