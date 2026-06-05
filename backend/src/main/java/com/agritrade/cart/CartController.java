@@ -95,11 +95,18 @@ public class CartController {
     }
 
     private CartItem owned(Long id) {
+        validateCartItemId(id);
         CartItem item = cartItemMapper.selectById(id);
         if (item == null || !item.getUserId().equals(StpUtil.getLoginIdAsLong())) {
             throw new BizException("购物车项不存在");
         }
         return item;
+    }
+
+    private void validateCartItemId(Long id) {
+        if (id == null || id <= 0) {
+            throw new BizException("购物车项ID必须为正数");
+        }
     }
 
     @Data

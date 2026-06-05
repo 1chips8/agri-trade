@@ -1,5 +1,6 @@
 package com.agritrade.cart;
 
+import com.agritrade.common.BizException;
 import org.junit.jupiter.api.Test;
 
 import javax.validation.Validation;
@@ -11,6 +12,7 @@ import javax.validation.Valid;
 import java.lang.reflect.Method;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class CartRequestValidationTest {
     private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
@@ -44,6 +46,21 @@ class CartRequestValidationTest {
         assertRequestBodyIsValid("selected", Long.class, CartController.SelectedRequest.class);
         assertRequestBodyIsValid("selectAll", CartController.SelectedRequest.class);
         assertThat(CartController.SelectedRequest.class.getDeclaredField("selected").isAnnotationPresent(Max.class)).isTrue();
+    }
+
+    @Test
+    void cartItemOperationsRejectNonPositiveCartItemId() {
+        CartController controller = new CartController(null, null);
+
+        assertThatThrownBy(() -> controller.updateQuantity(0L, new CartController.QuantityRequest()))
+                .isInstanceOf(BizException.class)
+                .hasMessage("购物车项ID必须为正数");
+        assertThatThrownBy(() -> controller.delete(-1L))
+                .isInstanceOf(BizException.class)
+                .hasMessage("购物车项ID必须为正数");
+        assertThatThrownBy(() -> controller.selected(null, new CartController.SelectedRequest()))
+                .isInstanceOf(BizException.class)
+                .hasMessage("购物车项ID必须为正数");
     }
 
     private void assertRequestBodyIsValid(String methodName, Class<?>... parameterTypes) throws Exception {
