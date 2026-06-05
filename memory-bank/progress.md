@@ -294,3 +294,22 @@
 - 购物车接口本身尚未校验数量必须为正数；库存 Mapper 会拒绝非正数量，订单事务不会因此修改库存。
 - Redis 商品级库存锁未实现；当前数据库原子更新已负责防止库存读后写覆盖。
 - 前端生产构建当前受缺失的 Rollup Windows 可选依赖阻塞。
+
+## 2026-06-05：前端生产构建验证
+
+### 已完成
+
+- 复现前端构建环境问题：当前 Windows 环境没有可用 `npm`，只能使用 bundled Node 直接执行 Vite。
+- 确认 `frontend/node_modules` 中缺失 `@rollup/rollup-win32-x64-msvc`，且仅存在 Linux 版 Rollup 可选包。
+- 按 `package-lock.json` 声明的精确版本，在本地 ignored `node_modules` 中恢复 `@rollup/rollup-win32-x64-msvc@4.61.0`。
+- 继续定位并确认 `esbuild` 平台包不匹配：本地仅存在 `@esbuild/linux-x64`，当前平台需要 `@esbuild/win32-x64`。
+- 按 `package-lock.json` 声明的精确版本，在本地 ignored `node_modules` 中恢复 `@esbuild/win32-x64@0.25.12`。
+
+### 验证
+
+- `node .\node_modules\vite\bin\vite.js build`：生产构建通过，2225 个模块完成转换，产物写入 `frontend/dist/`。
+
+### 遗留问题
+
+- 当前构建仍有 Rollup 注释移除警告和入口 JS chunk 超过 500 kB 的体积警告；不影响本次构建通过，可后续通过路由懒加载或 `manualChunks` 优化。
+- 本机没有可用 `npm`/`corepack`，后续若重装依赖，建议在 Windows 环境执行 `npm ci` 或补齐包管理器，避免再次混入 Linux 平台 `node_modules`。
