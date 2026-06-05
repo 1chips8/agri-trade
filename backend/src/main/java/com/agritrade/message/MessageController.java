@@ -1,6 +1,7 @@
 package com.agritrade.message;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.agritrade.common.BizException;
 import com.agritrade.common.Result;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import lombok.RequiredArgsConstructor;
@@ -41,10 +42,20 @@ public class MessageController {
 
     @PostMapping("/read")
     public Result<Void> batchRead(@RequestBody List<Long> ids) {
+        validateBatchReadIds(ids);
         for (Long id : ids) {
             read(id);
         }
         return Result.ok();
+    }
+
+    private void validateBatchReadIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            throw new BizException("消息ID不能为空");
+        }
+        if (ids.stream().anyMatch(id -> id == null || id <= 0)) {
+            throw new BizException("消息ID必须为正数");
+        }
     }
 
     @PostMapping("/read-all")
