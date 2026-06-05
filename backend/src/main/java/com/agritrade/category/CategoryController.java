@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -22,7 +23,7 @@ public class CategoryController {
     }
 
     @PostMapping("/api/admin/product-categories")
-    public Result<ProductCategory> create(@RequestBody ProductCategory category) {
+    public Result<ProductCategory> create(@Valid @RequestBody ProductCategory category) {
         authService.requireRole("ADMIN");
         category.setStatus(category.getStatus() == null ? "ENABLED" : category.getStatus());
         categoryMapper.insert(category);
@@ -30,7 +31,7 @@ public class CategoryController {
     }
 
     @PutMapping("/api/admin/product-categories/{categoryId}")
-    public Result<Void> update(@PathVariable Long categoryId, @RequestBody ProductCategory category) {
+    public Result<Void> update(@PathVariable Long categoryId, @Valid @RequestBody ProductCategory category) {
         authService.requireRole("ADMIN");
         category.setId(categoryId);
         categoryMapper.updateById(category);
