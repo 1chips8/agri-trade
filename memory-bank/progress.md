@@ -1,5 +1,24 @@
 # 项目进度
 
+## 2026-06-05：支付订单 ID 参数校验
+
+### 已完成
+
+- 模拟支付请求的 `orderId` 从必填增强为必须为正数。
+- 支付记录按订单查询接口新增订单 ID guard。
+- `orderId` 为空或非正数时在 Controller 或 Bean Validation 入口拒绝。
+- 无效订单 ID 不再继续进入支付记录查询逻辑。
+- 扩展支付请求校验单元测试，覆盖请求体和路径参数的无效订单 ID 拒绝路径。
+
+### 验证
+
+- `mvn -Dtest=PaymentRequestValidationTest test`：3 个测试通过。
+- `mvn clean test`：重新编译 53 个生产源码，33 个测试通过。
+
+### 遗留问题
+
+- Controller 参数清扫还剩商品公开列表可选 `categoryId` 查询参数可考虑补正数校验。
+
 ## 2026-06-05：类目 ID 参数校验
 
 ### 已完成
