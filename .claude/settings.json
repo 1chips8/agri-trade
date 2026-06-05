@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Program Files/**)",
+      "Read(//c/Program Files \\(x86\\)/**)",
+      "Read(//c/Users/chips/AppData/Roaming/Tencent/**)",
+      "Bash(mkdir -p \"/g/WeChatFiles\" \"/g/WeChatCache\" \"/g/QQFiles\" \"/g/WPSBackup\" \"/g/JetBrainsCache\")",
+      "Read(//g//**)",
+      "Bash(powershell.exe -Command ' *)",
+      "Bash(# Check JetBrains cache structure *)",
+      "Read(//c/Users/chips/AppData/Local/JetBrains/**)",
+      "Bash(rm -rf \"/c/Users/chips/AppData/Local/JetBrains\")",
+      "Bash(cmd.exe /c \"mklink /J \\\\\"C:\\\\Users\\\\chips\\\\AppData\\\\Local\\\\JetBrains\\\\\" \\\\\"G:\\\\JetBrainsCache\\\\\"\")",
+      "Read(//c/Users/chips/Documents/WeChat Files/**)",
+      "Read(//c/Users/chips/Documents/**)",
+      "Bash(cp -r \"/c/Users/chips/AppData/Roaming/Tencent/WeChat\"/* \"/g/WeChatCache/\")",
+      "Bash(cp -r \"/c/Users/chips/AppData/Roaming/Tencent/QQ\"/* \"/g/QQFiles/\")"
+    ]
+  }
+}
