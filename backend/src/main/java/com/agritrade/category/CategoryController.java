@@ -1,6 +1,7 @@
 package com.agritrade.category;
 
 import com.agritrade.auth.AuthService;
+import com.agritrade.common.BizException;
 import com.agritrade.common.Result;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import lombok.RequiredArgsConstructor;
@@ -40,11 +41,18 @@ public class CategoryController {
 
     @PostMapping("/api/admin/product-categories/{categoryId}/status")
     public Result<Void> status(@PathVariable Long categoryId, @RequestParam String status) {
+        validateStatus(status);
         authService.requireRole("ADMIN");
         ProductCategory category = new ProductCategory();
         category.setId(categoryId);
         category.setStatus(status);
         categoryMapper.updateById(category);
         return Result.ok();
+    }
+
+    private void validateStatus(String status) {
+        if (!"ENABLED".equals(status) && !"DISABLED".equals(status)) {
+            throw new BizException("类目状态无效");
+        }
     }
 }
