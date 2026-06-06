@@ -29,7 +29,7 @@
 
 ### 遗留问题
 
-- Docker Compose 全栈启动和浏览器级手动验收尚未执行，需在本地环境完成。
+- Docker Compose 全栈启动、HTTP 直达路由验收和关键角色接口验收已完成；浏览器手动点击流可作为最终演示前补充检查。
 - 现有未提交改动已 stash（`pre-frontend-redesign`），包含后端 CartController/Mapper 改动、Dockerfile、nginx.conf、docker-compose.override.yml，需在分支合并后处理。
 - 订单详情 toggle 已获取数据但尚未渲染展开行。
 

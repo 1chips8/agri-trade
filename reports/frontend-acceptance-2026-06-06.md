@@ -122,7 +122,7 @@ bf12e96 feat(frontend): improve buyer orders
 e0cb2c4 feat(frontend): improve merchant center
 ba004d9 feat(frontend): improve admin experience
 b707ef2 test(frontend): add acceptance report
-xxxxxxx fix(frontend): USER→CONSUMER role, nginx SPA fallback, Dockerfile update
+639ec3f fix(frontend): USER→CONSUMER role, nginx SPA fallback, Dockerfile update
 
 ## Remaining Risks
 
