@@ -8,7 +8,9 @@ export const useAuthStore = defineStore('auth', {
   }),
   getters: {
     isLogin: (state) => Boolean(state.token),
-    role: (state) => state.user?.role || 'GUEST'
+    role: (state) => state.user?.role || 'GUEST',
+    isAdmin: (state) => state.user?.role === 'ADMIN',
+    isMerchant: (state) => state.user?.role === 'MERCHANT'
   },
   actions: {
     async login(payload) {
@@ -22,9 +24,18 @@ export const useAuthStore = defineStore('auth', {
       await api.post('/auth/register', payload)
     },
     async fetchMe() {
-      if (!this.token) return
-      this.user = await api.get('/auth/me')
-      localStorage.setItem('user', JSON.stringify(this.user))
+      if (!this.token) return null
+      try {
+        this.user = await api.get('/auth/me')
+        localStorage.setItem('user', JSON.stringify(this.user))
+        return this.user
+      } catch (error) {
+        this.token = ''
+        this.user = null
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        return null
+      }
     },
     async logout() {
       if (this.token) await api.post('/auth/logout').catch(() => {})
