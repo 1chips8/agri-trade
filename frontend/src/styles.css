@@ -203,3 +203,10 @@ body {
   margin-bottom: 16px;
   border-radius: 8px;
 }
+
+.menu-badge {
+  line-height: 1;
+}
+.menu-badge .el-badge__content {
+  top: -4px;
+}

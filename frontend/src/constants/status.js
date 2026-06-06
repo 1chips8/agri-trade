@@ -23,6 +23,11 @@ export const APPLY_STATUS = {
   REJECTED: { label: '已拒绝', type: 'danger' }
 }
 
+export const READ_STATUS = {
+  UNREAD: { label: '未读', type: 'warning' },
+  READ: { label: '已读', type: 'info' }
+}
+
 export const ROLE_LABEL = {
   GUEST: '游客',
   USER: '买家',

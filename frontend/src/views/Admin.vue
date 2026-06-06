@@ -52,17 +52,47 @@
           <el-table-column prop="status" label="状态" />
         </el-table>
       </el-tab-pane>
+
+      <el-tab-pane label="订单管理" name="orders">
+        <div style="margin-bottom: 12px">
+          <el-select v-model="orderStatusFilter" clearable placeholder="全部状态" style="width: 160px">
+            <el-option v-for="(meta, key) in ORDER_STATUS" :key="key" :label="meta.label" :value="key" />
+          </el-select>
+        </div>
+        <el-table :data="filteredOrders">
+          <el-table-column prop="orderNo" label="订单号" min-width="180" />
+          <el-table-column label="金额" width="120">
+            <template #default="{ row }">{{ formatMoney(row.payAmount) }}</template>
+          </el-table-column>
+          <el-table-column label="状态" width="120">
+            <template #default="{ row }"><StatusTag kind="order" :value="row.orderStatus" /></template>
+          </el-table-column>
+          <el-table-column label="收货人" width="120">
+            <template #default="{ row }">{{ textOrDash(row.receiverName) }}</template>
+          </el-table-column>
+          <el-table-column label="电话" width="140">
+            <template #default="{ row }">{{ textOrDash(row.receiverPhone) }}</template>
+          </el-table-column>
+          <el-table-column label="地址" min-width="200">
+            <template #default="{ row }">{{ textOrDash(row.receiverAddress) }}</template>
+          </el-table-column>
+          <el-table-column label="创建时间" min-width="170">
+            <template #default="{ row }">{{ formatDateTime(row.createTime) }}</template>
+          </el-table-column>
+        </el-table>
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus/es/components/message/index'
 import api from '../api'
 import PageHeader from '../components/PageHeader.vue'
 import PageState from '../components/PageState.vue'
 import StatusTag from '../components/StatusTag.vue'
+import { ORDER_STATUS } from '../constants/status'
 import { formatDateTime, formatMoney, textOrDash } from '../utils/format'
 
 const activeTab = ref('merchants')
@@ -70,7 +100,14 @@ const loading = ref(false)
 const applications = ref([])
 const products = ref([])
 const categories = ref([])
+const orders = ref([])
+const orderStatusFilter = ref('')
 const categoryForm = reactive({ categoryName: '', parentId: 0, sortOrder: 0, status: 'ENABLED' })
+
+const filteredOrders = computed(() => {
+  if (!orderStatusFilter.value) return orders.value
+  return orders.value.filter((o) => o.orderStatus === orderStatusFilter.value)
+})
 
 async function load() {
   loading.value = true
@@ -78,6 +115,7 @@ async function load() {
     applications.value = await api.get('/admin/merchant-applications').catch(() => [])
     products.value = await api.get('/admin/products/audit').catch(() => [])
     categories.value = await api.get('/product-categories').catch(() => [])
+    orders.value = await api.get('/admin/orders').catch(() => [])
   } finally {
     loading.value = false
   }

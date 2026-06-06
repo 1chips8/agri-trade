@@ -2,6 +2,9 @@
   <div class="page">
     <PageHeader title="农产品集市" description="浏览已审核上架的农产品，选择数量后加入购物车。">
       <template #actions>
+        <el-select v-model="selectedCategory" clearable placeholder="全部分类" style="width: 160px" @change="load">
+          <el-option v-for="item in categories" :key="item.id" :label="item.categoryName" :value="item.id" />
+        </el-select>
         <el-input v-model="keyword" clearable placeholder="搜索农产品" style="width: 280px" @keyup.enter="load" />
         <el-button type="primary" @click="load">查询</el-button>
       </template>
@@ -15,9 +18,9 @@
 
     <div v-else class="product-grid">
       <el-card v-for="item in products" :key="item.id" class="product-card">
-        <img class="product-image" :src="productImage(item.productImage)" :alt="item.productName" />
+        <router-link :to="`/products/${item.id}`"><img class="product-image" :src="productImage(item.productImage)" :alt="item.productName" /></router-link>
         <div class="product-card__body">
-          <h3>{{ item.productName }}</h3>
+          <router-link :to="`/products/${item.id}`" style="text-decoration: none; color: inherit;"><h3>{{ item.productName }}</h3></router-link>
           <p class="muted">{{ textOrDash(item.originPlace) }} · 库存 {{ item.stock }} {{ item.unit }}</p>
           <p class="price">{{ formatMoney(item.price) }} / {{ item.unit }}</p>
           <div class="product-card__actions">
@@ -45,7 +48,9 @@ import { useAuthStore } from '../stores/auth'
 const router = useRouter()
 const auth = useAuthStore()
 const products = ref([])
+const categories = ref([])
 const keyword = ref('')
+const selectedCategory = ref(null)
 const quantities = reactive({})
 const loading = ref(false)
 const error = ref('')
@@ -55,7 +60,12 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    products.value = await api.get('/products', { params: { keyword: keyword.value || undefined } })
+    const [productsData, categoriesData] = await Promise.all([
+      api.get('/products', { params: { categoryId: selectedCategory.value || undefined, keyword: keyword.value || undefined } }),
+      api.get('/product-categories').catch(() => [])
+    ])
+    products.value = productsData
+    categories.value = categoriesData
     products.value.forEach((item) => {
       quantities[item.id] = quantities[item.id] || 1
     })

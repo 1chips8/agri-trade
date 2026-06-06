@@ -35,6 +35,136 @@
 
 ---
 
+## 2026-06-06：第一阶段 — 商品详情/分类筛选/订单详情/消息/管理员订单
+
+### Step 1 完成：分类筛选
+
+**修改文件**：
+
+- `frontend/src/views/Products.vue`：在搜索栏前添加全部分类下拉选择器，按 `categoryId` 筛选。
+
+**关键改动**：
+
+- 页面加载时同时请求 `GET /api/product-categories` 填充分类下拉。
+- 选择分类后触发 `load()`，传 `categoryId` 给 `GET /api/products`。
+- 与关键词搜索兼容，可同时按分类和关键词筛选。
+- 下拉支持 `clearable`，清除后恢复全部分类。
+
+### 验证
+
+- `node .\node_modules\vite\bin\vite.js build`：PASS — 1579 模块，10.74s，无错误。
+
+### Step 2 完成：商品详情页
+
+**新增文件**：
+
+- `frontend/src/views/ProductDetail.vue`：完整商品详情页。
+
+**修改文件**：
+
+- `frontend/src/router.js`：添加 `/products/:id` 路由（懒加载）。
+- `frontend/src/views/Products.vue`：商品图片和名称包裹 `<router-link>` 指向详情页。
+
+**关键行为**：
+
+- 通过 `GET /api/products/{id}` 获取商品信息，通过 `GET /api/product-categories` 映射 `categoryId` 到分类名。
+- 展示商品大图、名称、价格、单位、产地、库存、保质期、描述。
+- 分类名通过已加载的 categories 列表映射 `categoryId`；找不到时显示 `分类 #{id}`。
+- 数量选择器 + 加入购物车按钮（含登录引导，保留当前页面路径作为 redirect）。
+- 左上角 "← 返回商品列表" 链接。
+- 加载/错误/重试状态。
+
+### 验证
+
+- `node .\node_modules\vite\bin\vite.js build`：PASS — 1581 模块，10.36s，无错误。
+
+### Step 3 完成：订单详情渲染
+
+**修改文件**：
+
+- `frontend/src/views/Orders.vue`：用 ElTable 原生展开行替换手动详情按钮。
+
+**关键改动**：
+
+- 新增 `el-table-column type="expand"` 作为首列，每行左侧显示展开箭头。
+- 展开时通过 `expand-change` 事件调用 `GET /api/orders/{orderId}`，返回 `{ order, items }`。
+- 展开区域顶部显示订单时间线：创建/支付/发货/完成时间、取消原因、备注。
+- 展开区域底部渲染订单明细 mini 表格：商品图片、名称、单价、数量、小计。
+- 数据使用 `reactive` 缓存，已展开过的行再次展开不重复请求。
+- 移除原来无渲染的 "详情" 按钮，操作列宽度从 260px 收窄到 220px。
+
+### 验证
+
+- `node .\node_modules\vite\bin\vite.js build`：PASS — 1582 模块，10.22s，无错误。
+
+### Step 4 完成：消息中心
+
+**新增文件**：
+
+- `frontend/src/views/Messages.vue`：消息中心页面。
+
+**修改文件**：
+
+- `frontend/src/constants/status.js`：新增 `READ_STATUS` 常量（UNREAD/READ）。
+- `frontend/src/stores/auth.js`：新增 `unreadCount` state 和 `fetchUnreadCount()` action；logout 时重置。
+- `frontend/src/router.js`：添加 `/messages` 路由（auth + CONSUMER/MERCHANT）；登录后自动调用 `fetchUnreadCount()`。
+- `frontend/src/App.vue`：菜单新增"消息"项，使用 `el-badge` 显示未读数；`onMounted` 时拉取未读数。
+- `frontend/src/main.js`：注册 `ElBadge`、`ElCheckbox` 组件。
+- `frontend/src/styles.css`：新增 `.menu-badge` 样式。
+
+**关键行为**：
+
+- 消息卡片显示标题、内容、通知类型标签、时间、已读/未读状态标签。
+- 未读消息左侧有橙色边框 + 淡黄背景高亮。
+- 单条操作：标为已读（仅 UNREAD 显示）、删除。
+- 批量操作：勾选多条 → "N 条标记已读"。
+- 顶部"全部已读"按钮（无未读时禁用）。
+- 每个写操作后重新拉取消息列表和未读计数。
+- 未读数在菜单 badge 中实时刷新：登录时、导航守卫中、消息页加载时、操作后。
+
+### 验证
+
+- `node .\node_modules\vite\bin\vite.js build`：PASS — 1584 模块，10.56s，无错误。
+
+### Step 5 完成：管理员订单管理
+
+**修改文件**：
+
+- `frontend/src/views/Admin.vue`：新增"订单管理" tab。
+
+**关键改动**：
+
+- 在管理后台的 tabs 中新增"订单管理"（位于分类管理之后）。
+- 调用 `GET /api/admin/orders` 获取全部订单，含订单号、金额、状态、收货人/电话/地址、创建时间。
+- 状态筛选：顶部的 `<el-select>` 使用 `ORDER_STATUS` 常量填充，选择后通过 `computed` 前端过滤。
+- 筛选下拉支持 `clearable`，清除后显示全部订单。
+- 订单请求使用 `.catch(() => [])` 降级，不影响其他管理 tab 的数据加载。
+
+### 验证
+
+- `node .\node_modules\vite\bin\vite.js build`：PASS — 1584 模块，11.81s，无错误。
+
+---
+
+## 第一阶段总结
+
+### 验收修复
+
+- `frontend/src/main.js`：`ElOption` 导入路径从 `element-plus/es/components/option/index` 修正为从 `element-plus/es/components/select/index` 与 `ElSelect` 一同导出（Element Plus 中 `ElOption` 由 select 组件模块导出）。
+- `frontend/src/stores/auth.js`：`login()` 新增 `await this.fetchUnreadCount()`，确保登录后消息未读数立即刷新。
+
+两项修复 + build 验证通过。
+
+全部 5 个功能已实现并构建验证通过：
+
+| Step | 功能 | 涉及文件 | 构建 |
+|------|------|----------|------|
+| 1 | 分类筛选 | Products.vue | ✓ 1579 模块 |
+| 2 | 商品详情页 | ProductDetail.vue (新), router.js, Products.vue | ✓ 1581 模块 |
+| 3 | 订单详情渲染 | Orders.vue | ✓ 1582 模块 |
+| 4 | 消息中心 | Messages.vue (新), router.js, App.vue, auth store, main.js 等 | ✓ 1584 模块 |
+| 5 | 管理员订单管理 | Admin.vue | ✓ 1584 模块 |
+
 ## 2026-06-05：商品列表类目查询参数校验
 
 ### 已完成

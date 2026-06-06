@@ -3,7 +3,14 @@
     <el-header class="topbar">
       <div class="brand">农产品交易系统</div>
       <el-menu mode="horizontal" :ellipsis="false" :default-active="$route.path" router>
-        <el-menu-item v-for="item in menus" :key="item.path" :index="item.path">{{ item.label }}</el-menu-item>
+        <template v-for="item in menus" :key="item.path">
+          <el-menu-item v-if="!item.badge" :index="item.path">{{ item.label }}</el-menu-item>
+          <el-menu-item v-else :index="item.path">
+            <el-badge :value="auth.unreadCount" :hidden="auth.unreadCount <= 0" class="menu-badge">
+              {{ item.label }}
+            </el-badge>
+          </el-menu-item>
+        </template>
       </el-menu>
       <div class="account">
         <span v-if="auth.user">{{ auth.user.nickname || auth.user.username }} · {{ roleLabel }}</span>
@@ -18,13 +25,17 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import { ROLE_LABEL } from './constants/status'
 
 const router = useRouter()
 const auth = useAuthStore()
+
+onMounted(() => {
+  if (auth.isLogin) auth.fetchUnreadCount()
+})
 
 const menus = computed(() => {
   if (auth.isAdmin) {
@@ -39,6 +50,7 @@ const menus = computed(() => {
       { path: '/products', label: '商品' },
       { path: '/cart', label: '购物车' },
       { path: '/orders', label: '我的订单' },
+      { path: '/messages', label: '消息', badge: true },
       { path: '/merchant', label: auth.isMerchant ? '商家中心' : '商家入驻' }
     ]
   }
