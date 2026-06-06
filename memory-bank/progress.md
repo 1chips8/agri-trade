@@ -1,5 +1,31 @@
 # 项目进度
 
+## 2026-06-06：前端整改（作品集/简历级别）
+
+### 已完成
+
+- Task 1: 建立共享前端工具和组件（状态字典、格式化工具、PageState、StatusTag、PageHeader、样式）。
+- Task 2: 角色导航和路由权限（API 错误处理增强、auth store 扩展、路由元数据守卫、App.vue 角色感知菜单）。
+- Task 3: 商品浏览页（加载/空/错误状态、游客登录引导、库存为 0 禁用、商品网格布局）。
+- Task 4: 购物车和下单（商品信息补齐、选中/总价、收货信息校验、空购物车状态）。
+- Task 5: 买家订单页（中文状态标签、状态感知操作按钮、订单详情、空/错误状态）。
+- Task 6: 商家中心（入驻状态/表单、商品管理审核门控、分类选择、上架/下架、发货）。
+- Task 7: 管理后台和经营看板（商家审核、商品审核、分类管理、看板加载/错误状态）。
+- Task 8: 最终验收报告 `reports/frontend-acceptance-2026-06-06.md`。
+
+### 验证
+
+- `npm run build`：所有 7 个 Task 均单独构建通过，最终构建通过（Vite 10.07s，1579 模块，无错误）。
+- 7 个 Git 提交，均在 `codex/frontend-redesign` 分支。
+
+### 遗留问题
+
+- Docker Compose 全栈启动和浏览器级手动验收尚未执行，需在本地环境完成。
+- 现有未提交改动已 stash（`pre-frontend-redesign`），包含后端 CartController/Mapper 改动、Dockerfile、nginx.conf、docker-compose.override.yml，需在分支合并后处理。
+- 订单详情 toggle 已获取数据但尚未渲染展开行。
+
+---
+
 ## 2026-06-05：商品列表类目查询参数校验
 
 ### 已完成
