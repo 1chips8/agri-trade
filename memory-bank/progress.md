@@ -16,7 +16,16 @@
 ### 验证
 
 - `npm run build`：所有 7 个 Task 均单独构建通过，最终构建通过（Vite 10.07s，1579 模块，无错误）。
-- 7 个 Git 提交，均在 `codex/frontend-redesign` 分支。
+- Docker Compose 全栈重建并验证通过：6 个容器均运行。
+- 9 条 SPA 直达路由全部返回 HTTP 200。
+- Buyer 登录返回 `role: CONSUMER`，与路由守卫一致。
+- 8 个 Task 提交 + 1 个修复提交，均在 `codex/frontend-redesign` 分支。
+
+### 修复（2026-06-06 补充）
+
+- router.js: `['USER', 'MERCHANT']` → `['CONSUMER', 'MERCHANT']`，与后端返回的 `role: CONSUMER` 一致。
+- nginx.conf: 新增 SPA fallback（`try_files $uri $uri/ /index.html`），消除 404。
+- Dockerfile: 换用 `nginx:1.27-alpine` 基础镜像，复制 dist 和 nginx.conf。
 
 ### 遗留问题
 

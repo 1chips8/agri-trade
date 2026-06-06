@@ -8,9 +8,9 @@ const router = createRouter({
     { path: '/products', component: () => import('./views/Products.vue') },
     { path: '/login', component: () => import('./views/Login.vue') },
     { path: '/forbidden', component: () => import('./views/Forbidden.vue') },
-    { path: '/cart', component: () => import('./views/Cart.vue'), meta: { auth: true, roles: ['USER', 'MERCHANT'] } },
-    { path: '/orders', component: () => import('./views/Orders.vue'), meta: { auth: true, roles: ['USER', 'MERCHANT'] } },
-    { path: '/merchant', component: () => import('./views/Merchant.vue'), meta: { auth: true, roles: ['USER', 'MERCHANT'] } },
+    { path: '/cart', component: () => import('./views/Cart.vue'), meta: { auth: true, roles: ['CONSUMER', 'MERCHANT'] } },
+    { path: '/orders', component: () => import('./views/Orders.vue'), meta: { auth: true, roles: ['CONSUMER', 'MERCHANT'] } },
+    { path: '/merchant', component: () => import('./views/Merchant.vue'), meta: { auth: true, roles: ['CONSUMER', 'MERCHANT'] } },
     { path: '/admin', component: () => import('./views/Admin.vue'), meta: { auth: true, roles: ['ADMIN'] } },
     { path: '/dashboard', component: () => import('./views/Dashboard.vue'), meta: { auth: true, roles: ['ADMIN'] } }
   ]
