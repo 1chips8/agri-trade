@@ -51,28 +51,53 @@
             <el-table-column prop="productName" label="商品" />
             <el-table-column label="价格"><template #default="{ row }">{{ formatMoney(row.price) }}</template></el-table-column>
             <el-table-column prop="stock" label="库存" />
+            <el-table-column label="销量"><template #default="{ row }">{{ row.salesCount ?? 0 }}</template></el-table-column>
             <el-table-column label="审核"><template #default="{ row }"><StatusTag kind="audit" :value="row.auditStatus" /></template></el-table-column>
             <el-table-column label="销售"><template #default="{ row }"><StatusTag kind="sale" :value="row.saleStatus" /></template></el-table-column>
-            <el-table-column label="操作">
+            <el-table-column label="操作" width="200">
               <template #default="{ row }">
+                <el-button link @click="editProduct(row)">编辑</el-button>
                 <el-button v-if="row.auditStatus === 'APPROVED' && row.saleStatus !== 'ON_SALE'" link @click="onSale(row.id)">上架</el-button>
                 <el-button v-if="row.saleStatus === 'ON_SALE'" link @click="offSale(row.id)">下架</el-button>
               </template>
             </el-table-column>
           </el-table>
+
+          <el-dialog v-model="editDialogVisible" title="编辑商品" width="540px">
+            <el-form :model="editForm" label-width="88px">
+              <el-form-item label="名称"><el-input v-model="editForm.productName" /></el-form-item>
+              <el-form-item label="分类">
+                <el-select v-model="editForm.categoryId" placeholder="选择分类">
+                  <el-option v-for="item in categories" :key="item.id" :label="item.categoryName" :value="item.id" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="价格"><el-input-number v-model="editForm.price" :min="0" style="width:100%" /></el-form-item>
+              <el-form-item label="库存"><el-input-number v-model="editForm.stock" :min="0" style="width:100%" /></el-form-item>
+              <el-form-item label="单位"><el-input v-model="editForm.unit" /></el-form-item>
+              <el-form-item label="产地"><el-input v-model="editForm.originPlace" /></el-form-item>
+              <el-form-item label="图片"><el-input v-model="editForm.productImage" placeholder="图片 URL" /></el-form-item>
+              <el-form-item label="描述"><el-input v-model="editForm.description" type="textarea" /></el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="editDialogVisible = false">取消</el-button>
+              <el-button type="primary" :loading="editSubmitting" @click="updateProduct">保存</el-button>
+            </template>
+          </el-dialog>
         </template>
       </el-tab-pane>
 
       <el-tab-pane label="订单发货" name="orders">
         <el-table :data="orders">
-          <el-table-column prop="orderNo" label="订单号" />
+          <el-table-column prop="orderNo" label="订单号" min-width="180" />
           <el-table-column label="金额"><template #default="{ row }">{{ formatMoney(row.payAmount) }}</template></el-table-column>
-          <el-table-column label="收货人"><template #default="{ row }">{{ textOrDash(row.receiverName) }}</template></el-table-column>
           <el-table-column label="状态"><template #default="{ row }"><StatusTag kind="order" :value="row.orderStatus" /></template></el-table-column>
-          <el-table-column label="创建时间"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
-          <el-table-column label="操作">
+          <el-table-column label="收货人"><template #default="{ row }">{{ textOrDash(row.receiverName) }}</template></el-table-column>
+          <el-table-column label="电话" width="130"><template #default="{ row }">{{ textOrDash(row.receiverPhone) }}</template></el-table-column>
+          <el-table-column label="地址" min-width="180"><template #default="{ row }">{{ textOrDash(row.receiverAddress) }}</template></el-table-column>
+          <el-table-column label="创建时间" min-width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
+          <el-table-column label="操作" width="100">
             <template #default="{ row }">
-              <el-button v-if="row.orderStatus === 'PENDING_SHIPMENT'" link type="primary" @click="ship(row.id)">发货</el-button>
+              <el-button v-if="row.orderStatus === 'WAIT_SHIPMENT'" link type="primary" @click="ship(row.id)">发货</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -107,6 +132,44 @@ const productForm = reactive({
   productImage: '',
   description: ''
 })
+
+const editDialogVisible = ref(false)
+const editSubmitting = ref(false)
+const editForm = reactive({
+  productName: '',
+  price: 0,
+  stock: 0,
+  categoryId: null,
+  unit: '',
+  originPlace: '',
+  productImage: '',
+  description: ''
+})
+
+function editProduct(product) {
+  editForm.productName = product.productName
+  editForm.price = product.price
+  editForm.stock = product.stock
+  editForm.categoryId = product.categoryId
+  editForm.unit = product.unit
+  editForm.originPlace = product.originPlace || ''
+  editForm.productImage = product.productImage || ''
+  editForm.description = product.description || ''
+  editForm.id = product.id
+  editDialogVisible.value = true
+}
+
+async function updateProduct() {
+  editSubmitting.value = true
+  try {
+    await api.put(`/merchant/products/${editForm.id}`, editForm)
+    ElMessage.success('商品已更新，需重新审核')
+    editDialogVisible.value = false
+    await load()
+  } finally {
+    editSubmitting.value = false
+  }
+}
 
 const approved = computed(() => applyInfo.value?.applyStatus === 'APPROVED')
 

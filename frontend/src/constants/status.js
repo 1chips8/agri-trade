@@ -1,6 +1,6 @@
 export const ORDER_STATUS = {
   PENDING_PAYMENT: { label: '待支付', type: 'warning' },
-  PENDING_SHIPMENT: { label: '待发货', type: 'primary' },
+  WAIT_SHIPMENT: { label: '待发货', type: 'primary' },
   SHIPPED: { label: '已发货', type: 'success' },
   COMPLETED: { label: '已完成', type: 'success' },
   CANCELED: { label: '已取消', type: 'info' }

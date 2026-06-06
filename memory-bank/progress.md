@@ -165,6 +165,86 @@
 | 4 | 消息中心 | Messages.vue (新), router.js, App.vue, auth store, main.js 等 | ✓ 1584 模块 |
 | 5 | 管理员订单管理 | Admin.vue | ✓ 1584 模块 |
 
+---
+
+## 2026-06-06：第二阶段 — 商家和后台管理增强
+
+### Step 1：商家商品编辑
+
+**修改文件**：
+- `frontend/src/views/Merchant.vue`：商品表格新增"编辑"按钮，点击弹出编辑对话框，回填商品全部字段（名称、分类、价格、库存、单位、产地、图片 URL、描述）。
+
+**关键行为**：
+- 编辑提交调用 `PUT /api/merchant/products/{productId}`。
+- 后端 `ProductService.update()` 会将 `auditStatus` 重置为 `PENDING`、`saleStatus` 重置为 `OFF_SALE`，保存后商品需重新审核才能上架。
+- 保存成功后自动刷新商品列表并提示"商品已更新，需重新审核"。
+
+### 验证
+- `node .\node_modules\vite\bin\vite.js build`：PASS — 1608 模块，10.38s，无错误。
+
+### Step 2：分类编辑与启用/禁用
+
+**修改文件**：
+- `frontend/src/views/Admin.vue`：分类管理 tab 改造。
+
+**关键改动**：
+- 状态列用 `el-tag` 显示中文标签（绿色"启用"/红色"禁用"），不再显示裸 ENABLED/DISABLED。
+- 新增"编辑"按钮，弹出对话框支持修改分类名称、排序值、状态。
+- 编辑提交调用 `PUT /api/admin/product-categories/{categoryId}`。
+- 新增启用/禁用按钮，调用 `POST /api/admin/product-categories/{categoryId}/status?status=ENABLED|DISABLED`。
+- 操作成功后刷新分类列表。
+
+**已知限制**：
+- 当前 `GET /api/product-categories` 只返回 `status=ENABLED` 的分类。管理员管理时无法在页面中看到已禁用的分类（除非后端提供管理端全量查询接口）。表格上方已添加提示文字。
+
+### 验证
+- `node .\node_modules\vite\bin\vite.js build`：PASS — 1608 模块，10.03s，无错误。
+
+### Step 3：审核拒绝原因弹窗
+
+**修改文件**：
+- `frontend/src/views/Admin.vue`：商家审核和商品审核的拒绝操作改造。
+
+**关键改动**：
+- 商家审核拒绝：使用 `ElMessageBox.prompt` 弹出输入框，管理员填写拒绝原因后调用 `POST /api/admin/merchant-applications/{applyId}/reject`，body 含 `{ rejectReason: "输入内容" }`。
+- 商品审核拒绝：同样弹出原因输入框确认操作，但后端 `ProductController.reject()` 当前不接收拒绝原因 body（仅调用 `productService.audit(id, "REJECTED")`），输入框占位符已说明"后端暂不持久化"。
+- 拒绝后刷新列表。
+
+### 验证
+- `node .\node_modules\vite\bin\vite.js build`：PASS — 1608 模块，10.38s，无错误。
+
+### Step 4：商家中心增强展示
+
+**修改文件**：
+- `frontend/src/views/Merchant.vue`。
+- `frontend/src/constants/status.js`。
+
+**关键改动**：
+- 商品表格新增"销量"列（`salesCount`），展示已售数量。
+- 订单表格新增"电话"（`receiverPhone`）和"地址"（`receiverAddress`）列。
+- 状态按钮约束：编辑始终可见；上架仅 APPROVED 且非 ON_SALE 时显示；下架仅 ON_SALE 时显示；发货仅 WAIT_SHIPMENT 时显示。
+- 修复发货按钮状态：此前用 `PENDING_SHIPMENT`（前端旧常量），后端使用 `WAIT_SHIPMENT`，导致发货按钮从未显示。已将 `ORDER_STATUS` 常量中的 `PENDING_SHIPMENT` 修正为 `WAIT_SHIPMENT`。
+
+### 验证
+- `node .\node_modules\vite\bin\vite.js build`：PASS — 1608 模块，10.28s，无错误。
+
+### 第二阶段总结
+
+全部 4 个功能已实现并构建验证通过：
+
+| Step | 功能 | 涉及文件 | 构建 |
+|------|------|----------|------|
+| 1 | 商家商品编辑 | Merchant.vue | ✓ 1608 模块 |
+| 2 | 分类编辑与启用/禁用 | Admin.vue | ✓ 1608 模块 |
+| 3 | 审核拒绝原因弹窗 | Admin.vue | ✓ 1608 模块 |
+| 4 | 商家中心增强展示 | Merchant.vue, status.js | ✓ 1608 模块 |
+
+### 后端限制
+
+- 商品编辑后重置审核状态和销售状态是后端 `ProductService.update()` 的既有行为，前端已如实反映。
+- 商品拒绝接口 `POST /api/admin/products/{productId}/reject` 不接收拒绝原因 body，前端弹窗仅作为操作确认。
+- 分类管理缺乏管理端全量查询接口（`GET /api/product-categories` 只返回 ENABLED），管理员无法在页面中查看或重新启用已禁用的分类。
+
 ## 2026-06-05：商品列表类目查询参数校验
 
 ### 已完成
